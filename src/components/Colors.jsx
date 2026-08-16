@@ -4,7 +4,7 @@ import { X, Check, Palette, ArrowRight } from 'lucide-react'
 import { COLOR_COLLECTION } from '../data/content'
 import { SectionHeading, Reveal } from './ui/Reveal'
 import MagneticButton from './ui/MagneticButton'
-import { scrollToId } from '../lib/hooks'
+import { scrollToId } from '../lib/engine/scroll'
 
 function ColorCard({ color, index, onSelect }) {
   const reduced = useReducedMotion()
@@ -20,6 +20,8 @@ function ColorCard({ color, index, onSelect }) {
       whileTap={{ scale: 0.98 }}
       className="group relative flex aspect-[4/5] flex-col justify-between overflow-hidden rounded-3xl p-6 text-left"
       style={{ backgroundColor: color.hex }}
+      data-cursor="shade"
+      data-cursor-color={color.hex}
       aria-label={`Preview ${color.name}, hex ${color.hex}`}
     >
       {/* paint ripple on hover */}

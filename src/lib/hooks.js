@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import Lenis from 'lenis'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { subscribeShade, store } from './engine/store'
 
 /* Detects small screens / coarse pointers so we can drop heavy 3D. */
 export function useIsMobile(breakpoint = 768) {
@@ -28,6 +28,11 @@ export function usePrefersReducedMotion() {
   return reduced
 }
 
+/* Reactive active shade — re-renders only when the user selects a shade. */
+export function useActiveShade() {
+  return useSyncExternalStore(subscribeShade, () => store.activeShade)
+}
+
 /* Normalized mouse position (-0.5 .. 0.5) — drives 3D parallax. */
 export function useMousePosition() {
   const ref = useRef({ x: 0, y: 0 })
@@ -42,45 +47,11 @@ export function useMousePosition() {
   return ref
 }
 
-let lenisInstance = null
-
-/* Global smooth scroll. Call once from App. */
-export function useSmoothScroll(enabled = true) {
-  const [lenis, setLenis] = useState(null)
-  useEffect(() => {
-    if (!enabled) return
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const instance = new Lenis({
-      duration: 1.15,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: !reduced,
-      touchMultiplier: 1.6,
-    })
-    lenisInstance = instance
-    setLenis(instance)
-
-    let rafId
-    const raf = (time) => {
-      instance.raf(time)
-      rafId = requestAnimationFrame(raf)
-    }
-    rafId = requestAnimationFrame(raf)
-    return () => {
-      cancelAnimationFrame(rafId)
-      instance.destroy()
-      lenisInstance = null
-    }
-  }, [enabled])
-  return lenis
-}
-
-/* Scroll to an anchor smoothly through Lenis (falls back to native). */
-export function scrollToId(id) {
-  const el = document.querySelector(id)
-  if (!el) return
-  if (lenisInstance) {
-    lenisInstance.scrollTo(el, { offset: -72, duration: 1.4 })
-  } else {
-    el.scrollIntoView({ behavior: 'smooth' })
+export function webglAvailable() {
+  try {
+    const c = document.createElement('canvas')
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')))
+  } catch {
+    return false
   }
 }

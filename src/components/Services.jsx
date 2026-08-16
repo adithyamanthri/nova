@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { PaintRoller, Building2, Palette, Waves, Droplets, Store, Home, ArrowUpRight } from 'lucide-react'
 import { SERVICES } from '../data/content'
 import { SectionHeading, Reveal } from './ui/Reveal'
-import { scrollToId } from '../lib/hooks'
+import { scrollToId } from '../lib/engine/scroll'
 
 const ICONS = {
   roller: PaintRoller,

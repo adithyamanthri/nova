@@ -5,6 +5,7 @@
 
 export const NAV_LINKS = [
   { label: 'Home', href: '#home' },
+  { label: 'Shades', href: '#shades' },
   { label: 'Colors', href: '#colors' },
   { label: 'Products', href: '#products' },
   { label: 'Services', href: '#services' },
@@ -25,6 +26,25 @@ export const CONTACT_INFO = {
   ],
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Mumbai+Design+District',
 }
+
+/* The Shade Lab — 15 liquid paint pools */
+export const SHADES = [
+  { name: 'Pure White', code: '#F6F4EF', finish: 'Premium Matt', tagline: 'Clean. Calm. Endless.' },
+  { name: 'Pearl', code: '#EFE7DA', finish: 'Silk', tagline: 'Soft light, warm glow.' },
+  { name: 'Sand', code: '#D9C8A9', finish: 'Matt', tagline: 'Grounding warmth.' },
+  { name: 'Beige', code: '#C9B79A', finish: 'Matt', tagline: 'Timeless neutrality.' },
+  { name: 'Coral', code: '#FF7A6B', finish: 'Silk', tagline: 'Playful. Bold. Alive.' },
+  { name: 'Rose', code: '#F58FB4', finish: 'Satin', tagline: 'Gentle romance.' },
+  { name: 'Crimson', code: '#C73E3A', finish: 'Silk', tagline: 'Dramatic confidence.' },
+  { name: 'Sunset Orange', code: '#E8632A', finish: 'Silk', tagline: 'Energy in every stroke.' },
+  { name: 'Golden Yellow', code: '#F2B134', finish: 'Silk', tagline: 'Sunshine, bottled.' },
+  { name: 'Ocean Blue', code: '#2FA8DC', finish: 'Silk', tagline: 'Depth and clarity.' },
+  { name: 'Royal Blue', code: '#2457D6', finish: 'Premium Matt', tagline: 'Majestic and precise.' },
+  { name: 'Emerald', code: '#2E8B57', finish: 'Silk', tagline: 'Fresh. Natural. Timeless.' },
+  { name: 'Forest', code: '#1F5C45', finish: 'Matt', tagline: 'Quiet luxury.' },
+  { name: 'Charcoal', code: '#2B2B30', finish: 'Matt', tagline: 'Modern gravity.' },
+  { name: 'Midnight', code: '#12122A', finish: 'Premium Matt', tagline: 'Mysterious depth.' },
+]
 
 export const COLOR_COLLECTION = [
   { name: 'Arctic White', hex: '#F4F1EA', rgb: '244, 241, 234', finish: 'Matt', family: 'Whites' },

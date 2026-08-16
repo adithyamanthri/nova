@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RotateCcw, Check, Sofa, BedDouble, CookingPot, Paintbrush } from 'lucide-react'
 import { COLOR_COLLECTION, VISUALIZER_ROOMS } from '../data/content'
+import { store } from '../lib/engine/store'
 import { SectionHeading, Reveal } from './ui/Reveal'
 
 const ROOM_ICONS = { living: Sofa, bedroom: BedDouble, kitchen: CookingPot }
@@ -9,7 +10,7 @@ const ROOM_ICONS = { living: Sofa, bedroom: BedDouble, kitchen: CookingPot }
 /* ------------------------------------------------------------------ */
 /*  Stylized room renderer — wall color + furniture per room type      */
 /* ------------------------------------------------------------------ */
-function RoomView({ room, wallColor }) {
+export function RoomView({ room, wallColor }) {
   const accent = wallColor
   const darkAccent = shade(accent, -0.35)
 
@@ -127,7 +128,8 @@ function shade(hex, amt) {
 
 export default function Visualizer() {
   const [roomId, setRoomId] = useState('living')
-  const [colorHex, setColorHex] = useState(COLOR_COLLECTION[1].hex)
+  // follow the shade selected in the Shade Lab
+  const [colorHex, setColorHex] = useState(() => (typeof window !== 'undefined' ? store.activeShade : COLOR_COLLECTION[1].hex))
   const room = VISUALIZER_ROOMS.find((r) => r.id === roomId)
 
   const reset = () => {

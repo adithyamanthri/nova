@@ -1,9 +1,11 @@
+import { useEffect, useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ChevronDown, ArrowRight, Droplets } from 'lucide-react'
 import { TextReveal } from './ui/Reveal'
 import MagneticButton from './ui/MagneticButton'
 import { Marquee } from './ui/Effects'
-import { scrollToId } from '../lib/hooks'
+import { scrollToId } from '../lib/engine/scroll'
+import { store, lerp } from '../lib/engine/store'
 
 const EASE = [0.22, 1, 0.36, 1]
 
@@ -12,6 +14,28 @@ export default function Hero({ started }) {
   const contentY = useTransform(scrollYProgress, [0, 1], [0, -140])
   const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0])
   const glowScale = useTransform(scrollYProgress, [0, 1], [1, 1.25])
+
+  // scroll-velocity text motion: the headline leans + stretches briefly
+  // when scrolling fast, then settles. Pure refs — zero re-renders.
+  const headlineRef = useRef(null)
+  const skewRef = useRef(0)
+  const lsRef = useRef(0)
+  useEffect(() => {
+    let raf
+    const loop = () => {
+      const v = store.velocityNorm
+      skewRef.current = lerp(skewRef.current, -v * 3.2, 0.06)
+      lsRef.current = lerp(lsRef.current, Math.abs(v) * 0.35, 0.06)
+      const el = headlineRef.current
+      if (el) {
+        el.style.transform = `skewY(${skewRef.current.toFixed(2)}deg)`
+        el.style.letterSpacing = `${lsRef.current.toFixed(2)}em`
+      }
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   return (
     <div className="relative z-10 flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 text-center">
@@ -35,7 +59,7 @@ export default function Hero({ started }) {
         </motion.div>
 
         {/* headline */}
-        <h1 className="font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-cream-50 sm:text-7xl lg:text-[6.5rem]">
+        <h1 ref={headlineRef} className="will-change-transform font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-cream-50 sm:text-7xl lg:text-[6.5rem]">
           <TextReveal text="BRING YOUR" delay={0.3} started={started} />
           <br />
           <span className="text-gradient-paint">

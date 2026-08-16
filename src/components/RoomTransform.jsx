@@ -2,13 +2,32 @@ import { useRef, useState } from 'react'
 import { motion, useMotionValue, useSpring, useReducedMotion } from 'framer-motion'
 import { MoveHorizontal } from 'lucide-react'
 import { SectionHeading } from './ui/Reveal'
+import { useActiveShade } from '../lib/hooks'
+
+/* tiny color helpers for shade-derived walls */
+const hexToRgb = (hex) => {
+  const h = hex.replace('#', '')
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
+}
+const mix = (hex, target, amt) => {
+  const [r, g, b] = hexToRgb(hex)
+  const [tr, tg, tb] = target
+  const m = (c, tc) => Math.round(c + (tc - c) * amt)
+  return `rgb(${m(r, tr)}, ${m(g, tg)}, ${m(b, tb)})`
+}
 
 /* ------------------------------------------------------------------ */
 /*  Room scene drawn in SVG. `mode` renders the before (drab) or       */
-/*  after (painted) state of the same room.                            */
+/*  after (painted) state of the same room. The after wall follows     */
+/*  the shade selected in the Shade Lab.                               */
 /* ------------------------------------------------------------------ */
-function RoomScene({ mode }) {
+function RoomScene({ mode, wallColor = '#ff5c4d' }) {
   const painted = mode === 'after'
+  const light = [255, 255, 255]
+  const wallTop = mix(wallColor, light, 0.18)
+  const wallDeep = mix(wallColor, [0, 0, 0], 0.28)
+  const feature = mix(wallColor, light, 0.25)
+  const side = mix(wallColor, [0, 0, 0], 0.35)
   return (
     <svg viewBox="0 0 900 540" className="h-full w-full" preserveAspectRatio="xMidYMid slice" aria-hidden>
       <defs>
@@ -17,13 +36,13 @@ function RoomScene({ mode }) {
           <stop offset="100%" stopColor="#a49c90" />
         </linearGradient>
         <linearGradient id="wall-after" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ff8a5c" />
-          <stop offset="55%" stopColor="#ff5c4d" />
-          <stop offset="100%" stopColor="#e8433c" />
+          <stop offset="0%" stopColor={wallTop} />
+          <stop offset="55%" stopColor={wallColor} />
+          <stop offset="100%" stopColor={wallDeep} />
         </linearGradient>
         <linearGradient id="feature-after" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffb454" />
-          <stop offset="100%" stopColor="#f79d2e" />
+          <stop offset="0%" stopColor={feature} />
+          <stop offset="100%" stopColor={wallDeep} />
         </linearGradient>
         <linearGradient id="floor-before" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#8d8577" />
@@ -38,7 +57,7 @@ function RoomScene({ mode }) {
       {/* back wall */}
       <rect x="0" y="0" width="900" height="390" fill={painted ? 'url(#wall-after)' : 'url(#wall-before)'} />
       {/* side wall (perspective) */}
-      <polygon points="0,0 170,0 170,390 0,390" fill={painted ? '#d84a41' : '#9a9286'} opacity="0.55" />
+      <polygon points="0,0 170,0 170,390 0,390" fill={painted ? side : '#9a9286'} opacity="0.55" />
       {/* feature wall panel */}
       <rect x="430" y="70" width="300" height="240" rx="14" fill={painted ? 'url(#feature-after)' : '#9f978a'} opacity={painted ? 0.92 : 0.4} />
       {/* picture frame */}
@@ -112,6 +131,7 @@ function RoomScene({ mode }) {
 export default function RoomTransform() {
   const [progress, setProgress] = useState(50)
   const reduced = useReducedMotion()
+  const shade = useActiveShade()
   const containerRef = useRef(null)
   const dragX = useMotionValue(0)
 
@@ -175,7 +195,7 @@ export default function RoomTransform() {
             style={{ clipPath: `inset(0 0 0 ${progress}%)` }}
           >
             <motion.div style={{ x: reduced ? 0 : px, y: reduced ? 0 : py }} className="h-full w-full scale-110">
-              <RoomScene mode="after" />
+              <RoomScene mode="after" wallColor={shade} />
             </motion.div>
           </div>
 

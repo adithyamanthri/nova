@@ -1,59 +1,57 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useSmoothScroll, useIsMobile, usePrefersReducedMotion } from './lib/hooks'
-import { GlowCursor, PaintTrail, ScrollProgress } from './components/ui/Effects'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { AnimatePresence, MotionConfig } from 'framer-motion'
+import { initScroll } from './lib/engine/scroll'
+import { store } from './lib/engine/store'
+import { startFpsMonitor, baselineQuality } from './lib/engine/fps'
+import { useIsMobile, usePrefersReducedMotion, webglAvailable } from './lib/hooks'
+import { ScrollProgress } from './components/ui/Effects'
+import Cursor from './components/Cursor'
 import Loader from './components/Loader'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import PaintExperience from './components/PaintExperience'
+import ShadeLab from './components/ShadeLab'
 import Colors from './components/Colors'
-import Products from './components/Products'
 import RoomTransform from './components/RoomTransform'
-import Stats from './components/Stats'
+import Products from './components/Products'
 import Services from './components/Services'
+import Stats from './components/Stats'
 import Visualizer from './components/Visualizer'
 import Testimonials from './components/Testimonials'
 import Location from './components/Location'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
-import { LiquidTransition } from './components/ui/PaintSplash'
 
-// Heavy 3D backgrounds are lazy-loaded and only render after first paint.
-const HeroCanvas = lazy(() => import('./components/three/HeroCanvas'))
-const PaintCanScene = lazy(() => import('./components/three/PaintCanScene'))
-const AmbientBackground = lazy(() => import('./components/three/Background'))
-
-function CanvasFallback() {
-  return <div aria-hidden className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_40%,rgba(255,92,77,0.08),transparent_70%)]" />
-}
+// The single WebGL canvas — lazy so the first paint stays instant.
+const WorldCanvas = lazy(() => import('./components/three/WorldCanvas'))
 
 export default function App() {
-  useSmoothScroll(true)
   const isMobile = useIsMobile()
   const reducedMotion = usePrefersReducedMotion()
   const [loaded, setLoaded] = useState(false)
+  const [canvasOk, setCanvasOk] = useState(false)
 
-  // Keep 3D off until the loader finishes so first paint is instant.
-  // (setLoaded also flips from the Loader's onComplete callback.)
-
-  const canScrollRef = useRef(0)
   useEffect(() => {
-    const onScroll = () => {
-      const el = document.getElementById('paint-can-section')
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const total = window.innerHeight + el.offsetHeight
-      canScrollRef.current = Math.min(1, Math.max(0, -rect.top / total))
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    initScroll()
+    setCanvasOk(webglAvailable() && !reducedMotion)
+  }, [reducedMotion])
+
+  // adaptive quality: never exceed the device baseline, then let the FPS
+  // monitor step down further if the machine struggles.
+  useEffect(() => {
+    if (!loaded) return
+    const baseline = baselineQuality(isMobile, reducedMotion)
+    store.quality = baseline
+    const stop = startFpsMonitor((tier) => {
+      store.quality = Math.min(baseline, tier)
+    })
+    return stop
+  }, [loaded, isMobile, reducedMotion])
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="grain relative min-h-screen bg-ink-900 text-cream-50 antialiased">
       <ScrollProgress />
-      {!reducedMotion && !isMobile && <GlowCursor />}
-      {!reducedMotion && <PaintTrail />}
+      <Cursor />
 
       <AnimatePresence mode="wait">
         {!loaded && <Loader key="loader" onComplete={() => setLoaded(true)} />}
@@ -61,61 +59,70 @@ export default function App() {
 
       <Navbar started={loaded} />
 
-      <main id="main">
-        {/* ---------------- HERO ---------------- */}
+      {/* ONE WebGL canvas for the entire page journey */}
+      {loaded && canvasOk && (
+        <Suspense fallback={null}>
+          <WorldCanvas />
+        </Suspense>
+      )}
+
+      <main id="main" className="relative z-10">
+        {/* HERO — liquid paint world */}
         <section id="home" className="relative min-h-screen overflow-hidden">
-          <Suspense fallback={<CanvasFallback />}>
-            {loaded && <HeroCanvas reduced={isMobile} />}
-          </Suspense>
           <Hero started={loaded} />
         </section>
 
-        {/* ---------------- 3D PAINT EXPERIENCE ---------------- */}
-        <PaintExperience scrollRef={canScrollRef} />
+        {/* SHADE LAB — flowing liquid + shade pools (signature) */}
+        <ShadeLab />
 
-        {/* ---------------- COLORS ---------------- */}
+        {/* COLOR COLLECTION */}
         <div id="colors" className="relative">
-          <Suspense fallback={null}>
-            {loaded && <AmbientBackground reduced={isMobile} particles={isMobile ? 40 : 80} />}
-          </Suspense>
           <Colors />
         </div>
 
-        {/* ---------------- PRODUCTS ---------------- */}
-        <div id="products" className="relative">
-          <LiquidTransition />
-          <Products />
-        </div>
-
-        {/* ---------------- ROOM TRANSFORMATION ---------------- */}
+        {/* ROOM TRANSFORMATION */}
         <RoomTransform />
 
-        {/* ---------------- WHY BIG PAINTS ---------------- */}
-        <div id="about" className="relative overflow-hidden">
-          <Suspense fallback={null}>
-            {loaded && <AmbientBackground reduced={isMobile} particles={isMobile ? 30 : 70} />}
-          </Suspense>
-          <Stats />
-        </div>
+        {/* 3D PAINT CAN band — opens & pours into the product section */}
+        <section id="can" className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden">
+          <div className="pointer-events-none relative z-10 mx-auto max-w-3xl px-6 text-center">
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.35em] text-cream-300">
+              The pour
+            </p>
+            <h2 className="font-display text-4xl font-bold tracking-tight text-cream-50 sm:text-6xl">
+              From can <span className="text-gradient-paint">to canvas</span>
+            </h2>
+            <p className="mt-4 text-sm text-cream-400">
+              Keep scrolling — watch the can open and pour the next chapter.
+            </p>
+          </div>
+        </section>
 
-        {/* ---------------- SERVICES ---------------- */}
+        {/* PRODUCTS — pinned horizontal storytelling */}
+        <Products />
+
+        {/* SERVICES */}
         <div id="services" className="relative">
           <Services />
         </div>
 
-        {/* ---------------- VISUALIZER ---------------- */}
+        {/* WHY BIG PAINTS */}
+        <div id="about" className="relative overflow-hidden">
+          <Stats />
+        </div>
+
+        {/* VISUALIZER */}
         <div id="visualizer" className="relative">
-          <LiquidTransition />
           <Visualizer />
         </div>
 
-        {/* ---------------- TESTIMONIALS ---------------- */}
+        {/* TESTIMONIALS */}
         <Testimonials />
 
-        {/* ---------------- STORE / LOCATION ---------------- */}
+        {/* STORE / LOCATION */}
         <Location />
 
-        {/* ---------------- CONTACT ---------------- */}
+        {/* CONTACT */}
         <div id="contact" className="relative">
           <Contact />
         </div>
@@ -123,11 +130,13 @@ export default function App() {
 
       <Footer />
 
-      {/* soft bottom ambient light */}
-      <motion.div
+      {/* soft bottom ambient light, tinted by the active shade via CSS var */}
+      <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-0 h-40 bg-[radial-gradient(60%_100%_at_50%_100%,rgba(255,92,77,0.07),transparent)]"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-[5] h-40"
+        style={{ background: 'radial-gradient(60% 100% at 50% 100%, rgba(var(--shade-r, 255), var(--shade-g, 92), var(--shade-b, 77), 0.10), transparent)' }}
       />
     </div>
+    </MotionConfig>
   )
 }

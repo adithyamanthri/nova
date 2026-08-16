@@ -77,6 +77,7 @@ export default function MagneticButton({
       <Comp
         ref={ref}
         href={href}
+        data-cursor="button"
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
         onClick={handleClick}

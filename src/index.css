@@ -254,6 +254,26 @@ body {
   animation: shimmer 2.4s linear infinite;
 }
 
+/* Product showcase cards — active state driven imperatively */
+.product-card {
+  transform: scale(0.93);
+  opacity: 0.5;
+  filter: saturate(0.8);
+}
+.product-card.is-active {
+  transform: scale(1);
+  opacity: 1;
+  filter: saturate(1);
+}
+
+/* Hide native cursor on precise pointers (replaced by the custom cursor) */
+@media (pointer: fine) {
+  body.custom-cursor,
+  body.custom-cursor * {
+    cursor: none !important;
+  }
+}
+
 /* Hide scrollbar for horizontal scrollers */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

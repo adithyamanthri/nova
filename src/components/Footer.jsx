@@ -1,6 +1,6 @@
 import { Instagram, Facebook, Youtube, MapPin, Phone, Mail, MessageCircle } from 'lucide-react'
 import { NAV_LINKS, CONTACT_INFO } from '../data/content'
-import { scrollToId } from '../lib/hooks'
+import { scrollToId } from '../lib/engine/scroll'
 
 const SOCIALS = [
   { icon: Instagram, label: 'Instagram', href: '#' },

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Menu, X, Phone } from 'lucide-react'
 import { NAV_LINKS, CONTACT_INFO } from '../data/content'
-import { scrollToId } from '../lib/hooks'
+import { scrollToId } from '../lib/engine/scroll'
 import MagneticButton from './ui/MagneticButton'
 
 function Logo({ onClick }) {

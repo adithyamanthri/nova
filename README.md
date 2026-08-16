@@ -1,37 +1,62 @@
 # BIG PAINTS 🎨
 
-A premium, immersive 3D website for **BIG PAINTS** — a professional paint and
-home-decoration shop. Built as a cinematic product showcase: React + Vite +
-Tailwind CSS v4, Three.js (React Three Fiber + Drei), Framer Motion and Lenis.
+A premium, cinematic 3D website for **BIG PAINTS** — a professional paint and
+home-decoration shop. Rebuilt around one core idea: **one WebGL canvas, zero
+per-frame React re-renders, and a camera that travels through the page** so the
+whole site feels like a single continuous journey through liquid paint.
 
-## Features
+React 19 · Vite 7 · Tailwind CSS v4 · Three.js (React Three Fiber) · GSAP
+ScrollTrigger · Framer Motion · Lenis · Lucide React.
 
-- **Cinematic hero** — full-screen R3F scene: liquid blobs, glossy spheres,
-  falling paint droplets, sparkles, volumetric-style lights and mouse parallax.
-- **3D paint can experience** — a procedural, reflective paint can that spins,
-  tilts toward the cursor, orbits droplets and responds to scroll.
-- **Interactive color collection** — hover ripples, spread halos, and a
-  fullscreen liquid color-preview transition with hex/RGB/finish details.
-- **Room transformation** — draggable before/after slider with parallax.
-- **Color visualizer** — pick a room (living / bedroom / kitchen) and a wall
-  color; preview updates live, with a reset option.
-- **Why BIG PAINTS** — animated stat counters, premium quality banner.
-- **Services** — animated icon cards with hover gradients and glows.
-- **Testimonials** — scroll-driven horizontal gallery (vertical on mobile).
-- **Store / location** — animated map backdrop, contact cards, Google Maps CTA.
-- **Contact** — accessible form with a success animation (swap in a real
-  endpoint — see below).
-- **Premium chrome** — paint-stroke loader, glass navbar that shrinks on scroll,
-  fullscreen mobile menu, magnetic buttons, cursor paint trail, scroll progress
-  bar, grain overlay, section transition splashes.
+## Architecture (why it's fast)
 
-## Performance & accessibility
+- **One primary WebGL canvas** (`src/components/three/WorldCanvas.jsx`). All 3D —
+  hero liquid, shade-lab liquid plane, paint can, particles — lives in it as
+  *stages*. The camera moves in sync with Lenis scroll (`CameraRig`), so 3D
+  objects stay glued to their DOM sections with zero extra canvases.
+- **A plain mutable engine store** (`src/lib/engine/store.js`) shared between DOM
+  and WebGL. Scroll position, velocity, pointer, hovered/active shade, quality
+  tier and product index are written imperatively and read inside `useFrame` —
+  **no React state updates during animation**, ever.
+- **Scroll-velocity motion system** (`src/lib/engine/scroll.js`): paint flow,
+  particle stretch, headline skew and camera easing all scale with how fast you
+  scroll, then settle when you stop.
+- **Adaptive quality** (`src/lib/engine/fps.js`): a hysteresis-based FPS monitor
+  steps pixel ratio and particle counts down (60fps → full, 45–60 → reduced,
+  <45 → light shaders), and never exceeds a device baseline (mobile = lower).
+- **Instanced particles** (`ParticleField.jsx`) — one `InstancedMesh` covers the
+  whole page; colors lerp toward the active shade.
+- **Custom GLSL, no textures**: liquid plane (fbm flow + cursor ripples), hero
+  blob (vertex-displaced fresnel sphere), pour stream and spreading pool are all
+  cheap `ShaderMaterial`s.
+- **GSAP ScrollTrigger** for the pinned product storytelling and the paint-can
+  choreography — scrubbed, so nothing fights the scroll.
+- 3D is lazy-loaded, only mounts after the loader, and is skipped entirely when
+  WebGL is unavailable or `prefers-reduced-motion` is set.
 
-- 3D scenes are **lazy-loaded** and only mount after the loader finishes.
-- The `three` vendor bundle is split into its own lazy chunk.
-- Reduced particle counts and lower DPR on **mobile**.
-- `prefers-reduced-motion` support disables heavy animation and 3D effects.
-- Semantic HTML, ARIA labels, keyboard-navigable controls, focus states.
+## Page journey
+
+```
+HERO (liquid blob world)
+  → SHADE LAB — "FIND YOUR COLOR" — 15 liquid pools; hover ripples,
+    click = cinematic paint-explosion showcase; the liquid stream cycles
+    shades as you scroll ("river of paint")
+  → COLOR COLLECTION
+  → ROOM TRANSFORMATION (before/after, walls follow the selected shade)
+  → PAINT CAN — opens, tilts, pours; the pool becomes the product tabletop
+  → PRODUCTS — pinned horizontal storytelling; the 3D can recolors per product
+  → SERVICES → WHY BIG PAINTS → VISUALIZER → TESTIMONIALS → LOCATION → CONTACT
+```
+
+Every section's accent lighting, particles and glass reflections lerp toward
+the shade you select — the color follows you through the whole page.
+
+## Cursor
+
+Desktop only (`pointer: fine`, disabled on touch / reduced motion): a dot +
+lerped ring that expands over buttons, becomes the hovered shade over color
+pools, and shows **VIEW** over products. Context is declared with
+`data-cursor` attributes — add a new state anywhere.
 
 ## Getting started
 
@@ -42,25 +67,15 @@ npm run build    # production build -> dist/
 npm run preview  # preview the production build
 ```
 
-Deploy the `dist/` folder to **Vercel**, **Netlify** or **GitHub Pages**
-(no build-time secrets needed).
+Deploy `dist/` to Vercel, Netlify or GitHub Pages (no build-time secrets).
 
-## Customizing content
+## Customizing
 
-All copy, colors, products, services and testimonials live in
-[`src/data/content.js`](src/data/content.js) — edit that file to rebrand or add
-real products. The product card illustrations are SVG placeholders in
-[`src/components/Products.jsx`](src/components/Products.jsx) and can be
-swapped for real photography.
-
-## Wiring up the contact form
-
-The form in [`src/components/Contact.jsx`](src/components/Contact.jsx)
-currently simulates submission. Point it at any free form backend
-(e.g. Formspree, Web3Forms) by replacing the `setTimeout` with a `fetch` POST
-to your endpoint, then show the success state on a 2xx response.
-
-## Stack
-
-React 19 · Vite 7 · Tailwind CSS v4 · Three.js · React Three Fiber · Drei ·
-Framer Motion · Lenis · Lucide React
+- All copy, shades, colors, products, services, testimonials: `src/data/content.js`
+- 3D stage objects: `src/components/three/*` (stages can be individually
+  enabled/disabled/optimized/replaced)
+- Shader effects: `src/lib/engine/shaders.js`
+- Contact form in `src/components/Contact.jsx` simulates submission — point it
+  at any free form backend (Formspree, Web3Forms) to go live.
+- Product art is SVG placeholders in `src/components/Products.jsx` — swap for
+  real photography anytime.
